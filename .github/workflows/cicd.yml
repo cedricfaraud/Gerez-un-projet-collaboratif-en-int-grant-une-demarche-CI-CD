@@ -41,6 +41,9 @@ jobs:
             npm install
             npm ci
             npm install @angular/material @angular/cdk
+      - name: Run build
+        run: npm run build
+
       - name: Run tests
         run: npm run test -- --browsers=ChromeHeadless --code-coverage 
         
@@ -52,3 +55,5 @@ jobs:
         with:
           name: frontend-coverage-report
           path: front/coverage/
+          overwrite: true
+
