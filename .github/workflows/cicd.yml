@@ -65,6 +65,9 @@ jobs:
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         with:
+          args: >
+            -Dsonar.projectKey=CI_CD_Front
+            -Dsonar.organization=cedricfaraud
           projectBaseDir: front
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
