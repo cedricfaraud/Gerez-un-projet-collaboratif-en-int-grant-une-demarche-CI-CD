@@ -30,6 +30,12 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout font
         uses: actions/checkout@v4
+        
+      - name: Cache front
+        uses: actions/cache@v4
+        with:
+          path: frontcache
+          key: ${{ runner.os }}-front
 
       - name: Node.js
         uses: actions/setup-node@v4
@@ -45,7 +51,7 @@ jobs:
         run: npm run build
 
       - name: Run tests
-        run: npm run test -- --browsers=ChromeHeadless --code-coverage 
+        run: npm run test -- --no-watch --no-progress --browsers=ChromeHeadless --code-coverage 
         
       - name: Verify Coverage Report
         run: ls -la front/coverage/
