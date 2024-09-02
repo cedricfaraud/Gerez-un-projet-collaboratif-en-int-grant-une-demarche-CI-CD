@@ -54,10 +54,7 @@ jobs:
 
       - name: Run tests
         run: npm run test -- --no-watch --no-progress --browsers=ChromeHeadless --code-coverage 
-        
-      #- name: Verify Coverage Report
-       # run: ls -la front/coverage/
-        
+
       - name: Upload coverage Report
         uses: actions/upload-artifact@v4
         with:
@@ -65,3 +62,10 @@ jobs:
           path: front/coverage/
           overwrite: true
 
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          projectBaseDir: front
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
