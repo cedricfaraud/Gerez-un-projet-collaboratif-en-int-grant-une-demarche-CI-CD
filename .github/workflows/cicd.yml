@@ -127,5 +127,5 @@ jobs:
             -Dsonar.projectKey=CI_CD_Back
             -Dsonar.organization=cedricfaraud
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_BACK }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
