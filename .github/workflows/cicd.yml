@@ -117,6 +117,9 @@ jobs:
           path: back/target/site/jacoco/
           overwrite: true
 
+      - name: Check sonar properties
+        run: cat sonar-project.properties
+
       - name: Analyse SonarCloud
         uses: SonarSource/sonarcloud-github-action@master
         with:
