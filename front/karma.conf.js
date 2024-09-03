@@ -30,7 +30,7 @@ module.exports = function (config) {
       reporters: [
         { type: "html" },
         { type: "text-summary" },
-        { type: "lcov" }, // Ajout de ce reporter pour générer des rapports au format lcov
+        { type: "lcov" }, // Ajout de ce reporter pour gÃ©nÃ©rer des rapports au format lcov
       ],
     },
     reporters: ["progress", "kjhtml"],
