@@ -104,6 +104,9 @@ jobs:
           key: ${{ runner.os }}-build-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-build-
+      - name: Compile Java Code
+        run: mvn -B clean compile
+
       - name: Run backend Tests
         run: mvn -B clean test
 
