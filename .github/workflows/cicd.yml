@@ -61,7 +61,7 @@ jobs:
         uses: SonarSource/sonarcloud-github-action@master
         with:
           args: >
-            -Dsonar.projectKey=CI_CD_Front
+            -Dsonar.projectKey=FRONT
             -Dsonar.organization=cedricfaraud
           projectBaseDir: front
         env:
