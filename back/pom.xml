@@ -16,7 +16,7 @@
 	<properties>
 		<java.version>11</java.version>
 		<sonar.organization>cedricfaraud</sonar.organization>
-		<sonar.projectKey>CI_CD_Back</sonar.projectKey>
+		<sonar.projectKey>BACK</sonar.projectKey>
 		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
 	</properties>
 	<dependencies>
