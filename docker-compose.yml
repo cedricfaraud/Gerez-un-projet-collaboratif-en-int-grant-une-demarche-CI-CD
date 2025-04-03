@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  bobapp-back:
+    image: cfaraud/backend:latest
+    container_name: bobapp-back
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  bobapp-front:
+    image: cfaraud/frontend:latest
+    container_name: bobapp-front
+    ports:
+      - "80:80"
+    depends_on:
+      - bobapp-back
