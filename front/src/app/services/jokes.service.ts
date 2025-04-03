@@ -4,7 +4,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { Joke } from '../model/joke.model';
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class JokesService {
   private pathService = 'http://localhost:8080/api/joke';
@@ -17,9 +17,7 @@ export class JokesService {
   }
 
   public getRandomJoke(): void {
-    this.httpClient
-      .get<Joke>(this.pathService)
-      .subscribe((joke: Joke) => this.subject.next(joke));
+    this.httpClient.get<Joke>(this.pathService).subscribe((joke: Joke) => this.subject.next(joke));
   }
 
   public joke$(): Observable<Joke | null> {
