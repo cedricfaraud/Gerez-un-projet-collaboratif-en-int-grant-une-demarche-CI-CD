@@ -7,14 +7,16 @@ on:
   push:
     branches: ["main"]
     paths-ignore:
-      - 'reports/**' # Ignorer les changements dans le répertoire contenant les rapports
+      - "front/coverage/**" # Ignorer les changements dans le répertoire coverage du frontend
+      - "back/target/site/jacoco/**" # Ignorer les changements dans le répertoire jacoco du backend
 
   pull_request:
     branches: ["main"]
     types:
       - closed # Le workflow se déclenche lorsque la pull request est fermée
     paths-ignore:
-      - 'reports/**' # Ignorer les changements dans le répertoire contenant les rapports
+      - "front/coverage/**" # Ignorer les changements dans le répertoire coverage du frontend
+      - "back/target/site/jacoco/**" # Ignorer les changements dans le répertoire jacoco du backend
 
 jobs:
   # This workflow contains a single job called "frontend_test"
@@ -62,12 +64,6 @@ jobs:
           name: frontend-coverage-report
           path: front/coverage/
           overwrite: true
-
-      - name: Move frontend coverage report to reports
-        run: |
-          mkdir -p reports/frontend
-          cp -r front/coverage/* reports/frontend/
-
       - name: Commit and push frontend report
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -75,10 +71,10 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git pull origin main
-          git add reports/frontend/
+          git add front/coverage/
           git commit -m "Add frontend coverage report"
           git push origin main
-          
+
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         with:
@@ -103,7 +99,7 @@ jobs:
       - name: Push Docker image
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/frontend:latest
-          
+
   # This workflow contains a single job called "backend_test"
   backend_test:
     # The type of runner that the job will run on
@@ -151,11 +147,6 @@ jobs:
           path: back/target/site/jacoco/
           overwrite: true
 
-      - name: Move backend coverage report to reports
-        run: |
-          mkdir -p reports/backend
-          cp -r back/target/site/jacoco/* reports/backend/
-
       - name: Commit and push backend report
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -163,17 +154,17 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git pull origin main
-          git add reports/backend/
+          git add back/target/site/jacoco/
           git commit -m "Add backend coverage report"
           git push origin main
-          
+
       - name: Check sonar properties
         run: cat sonar-project.properties
 
       - name: Analyse SonarCloud
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:4.0.0.4121:sonar 
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:4.0.0.4121:sonar
 
       - name: Build Docker image
         run: |
