@@ -57,18 +57,16 @@ jobs:
       - name: Run tests
         run: npm run test -- --no-watch --no-progress --browsers=ChromeHeadless --code-coverage
 
-      # Étape 7 : Téléverser le rapport de couverture en tant qu'artefact (conditionnée par `frontend_test`)
+      # Étape 7 : Téléverser le rapport de couverture en tant qu'artefact
       - name: Upload coverage report
-        needs: frontend_test
         uses: actions/upload-artifact@v4
         with:
           name: frontend-coverage-report
           path: front/coverage/
           overwrite: true
 
-      # Étape 8 : Ajouter et pousser le rapport dans le dépôt (conditionnée par `Upload coverage report`)
+      # Étape 8 : Ajouter et pousser le rapport dans le dépôt
       - name: Commit and push frontend report
-        needs: Upload coverage report
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -79,9 +77,8 @@ jobs:
           git commit -m "Add frontend coverage report"
           git push origin main
 
-      # Étape 9 : Analyse avec SonarCloud (conditionnée par `frontend_test`)
+      # Étape 9 : Analyse avec SonarCloud
       - name: SonarCloud Scan
-        needs: frontend_test
         uses: SonarSource/sonarcloud-github-action@master
         with:
           args: >
@@ -92,22 +89,19 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Étape 10 : Construire l'image Docker pour le frontend (conditionnée par `frontend_test`)
+      # Étape 10 : Construire l'image Docker pour le frontend
       - name: Build Docker image
-        needs: frontend_test
         run: docker build -t ${{ secrets.DOCKER_USERNAME }}/frontend:latest .
 
-      # Étape 11 : Connexion à Docker Hub (conditionnée par `frontend_test`)
+      # Étape 11 : Connexion à Docker Hub
       - name: Log in to Docker Hub
-        needs: frontend_test
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Étape 12 : Pousser l'image Docker sur Docker Hub (conditionnée par `Log in to Docker Hub`)
+      # Étape 12 : Pousser l'image Docker sur Docker Hub
       - name: Push Docker image
-        needs: Log in to Docker Hub
         run: docker push ${{ secrets.DOCKER_USERNAME }}/frontend:latest
 
   backend_test:
@@ -149,18 +143,16 @@ jobs:
       - name: Compile Java Code
         run: mvn -B clean verify
 
-      # Étape 5 : Téléverser le rapport Jacoco en tant qu'artefact (conditionnée par `backend_test`)
+      # Étape 5 : Téléverser le rapport Jacoco en tant qu'artefact 
       - name: Upload Jacoco Report
-        needs: backend_test
         uses: actions/upload-artifact@v4
         with:
           name: jacoco-report
           path: back/target/site/jacoco/
           overwrite: true
 
-      # Étape 6 : Ajouter et pousser le rapport Jacoco dans le dépôt (conditionnée par `Upload Jacoco Report`)
+      # Étape 6 : Ajouter et pousser le rapport Jacoco dans le dépôt
       - name: Commit and push backend report
-        needs: Upload Jacoco Report
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -171,30 +163,25 @@ jobs:
           git commit -m "Add backend coverage report"
           git push origin main
 
-      # Étape 7 : Analyse avec SonarCloud (conditionnée par `backend_test`)
+      # Étape 7 : Analyse avec SonarCloud
       - name: Check sonar properties
-        needs: backend_test
         run: cat sonar-project.properties
       - name: Analyse SonarCloud
-        needs: backend_test
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:4.0.0.4121:sonar
 
-      # Étape 8 : Construire l'image Docker pour le backend (conditionnée par `backend_test`)
+      # Étape 8 : Construire l'image Docker pour le backend
       - name: Build Docker image
-        needs: backend_test
         run: docker build -t ${{ secrets.DOCKER_USERNAME }}/backend:latest .
 
-      # Étape 9 : Connexion à Docker Hub (conditionnée par `backend_test`)
+      # Étape 9 : Connexion à Docker Hub
       - name: Log in to Docker Hub
-        needs: backend_test
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Étape 10 : Pousser l'image Docker sur Docker Hub (conditionnée par `Log in to Docker Hub`)
+      # Étape 10 : Pousser l'image Docker sur Docker Hub
       - name: Push Docker image
-        needs: backend_test
         run: docker push ${{ secrets.DOCKER_USERNAME }}/backend:latest
