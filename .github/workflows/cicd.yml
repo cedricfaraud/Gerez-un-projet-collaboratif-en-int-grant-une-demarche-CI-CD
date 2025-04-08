@@ -1,39 +1,36 @@
-# This is a basic workflow to help you get started with Actions
 name: Workflow CI/CD
 
-# Controls when the workflow will run
+# Déclencheurs du workflow
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
     branches: ["main"]
     paths-ignore:
-      - "front/coverage/**" # Ignorer les changements dans le répertoire coverage du frontend
-      - "back/target/site/jacoco/**" # Ignorer les changements dans le répertoire jacoco du backend
-
+      # Ignorer les modifications dans les répertoires spécifiques au rapport de couverture
+      - "front/coverage/**"
+      - "back/target/site/jacoco/**"
   pull_request:
     branches: ["main"]
     types:
-      - closed # Le workflow se déclenche lorsque la pull request est fermée
+      # Déclencher lorsque la PR est ouverte ou mise à jour
+      - opened
+      - synchronize
     paths-ignore:
-      - "front/coverage/**" # Ignorer les changements dans le répertoire coverage du frontend
-      - "back/target/site/jacoco/**" # Ignorer les changements dans le répertoire jacoco du backend
+      - "front/coverage/**"
+      - "back/target/site/jacoco/**"
 
 jobs:
-  # This workflow contains a single job called "frontend_test"
   frontend_test:
-    # The type of runner that the job will run on
     name: Frontend test and coverage report
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: front
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      # Étape 1 : Cloner le dépôt du frontend
       - name: Checkout front
         uses: actions/checkout@v4
 
+      # Étape 2 : Gérer le cache des dépendances npm pour accélérer les builds
       - name: Cache front
         uses: actions/cache@v4
         with:
@@ -42,29 +39,36 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
+      # Étape 3 : Configurer Node.js
       - name: Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 16.x
 
+      # Étape 4 : Installer les dépendances npm
       - name: Install Dependencies
-        run: |
-          npm install
-          npm ci
+        run: npm ci
 
+      # Étape 5 : Construire le projet frontend
       - name: Run build
         run: npm run build
 
+      # Étape 6 : Exécuter les tests unitaires avec rapport de couverture
       - name: Run tests
         run: npm run test -- --no-watch --no-progress --browsers=ChromeHeadless --code-coverage
 
-      - name: Upload coverage Report
+      # Étape 7 : Téléverser le rapport de couverture en tant qu'artefact (conditionnée par `frontend_test`)
+      - name: Upload coverage report
+        needs: frontend_test
         uses: actions/upload-artifact@v4
         with:
           name: frontend-coverage-report
           path: front/coverage/
           overwrite: true
+
+      # Étape 8 : Ajouter et pousser le rapport dans le dépôt (conditionnée par `Upload coverage report`)
       - name: Commit and push frontend report
+        needs: Upload coverage report
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -75,7 +79,9 @@ jobs:
           git commit -m "Add frontend coverage report"
           git push origin main
 
+      # Étape 9 : Analyse avec SonarCloud (conditionnée par `frontend_test`)
       - name: SonarCloud Scan
+        needs: frontend_test
         uses: SonarSource/sonarcloud-github-action@master
         with:
           args: >
@@ -86,41 +92,44 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Étape 10 : Construire l'image Docker pour le frontend (conditionnée par `frontend_test`)
       - name: Build Docker image
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/frontend:latest .
+        needs: frontend_test
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/frontend:latest .
 
+      # Étape 11 : Connexion à Docker Hub (conditionnée par `frontend_test`)
       - name: Log in to Docker Hub
+        needs: frontend_test
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      # Étape 12 : Pousser l'image Docker sur Docker Hub (conditionnée par `Log in to Docker Hub`)
       - name: Push Docker image
-        run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/frontend:latest
+        needs: Log in to Docker Hub
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/frontend:latest
 
-  # This workflow contains a single job called "backend_test"
   backend_test:
-    # The type of runner that the job will run on
     name: Backend test and coverage report
     runs-on: ubuntu-latest
-
+    needs: frontend_test # Dépend de la réussite du frontend
     defaults:
       run:
         working-directory: back
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      # Étape 1 : Cloner le dépôt du backend
       - name: Checkout back
         uses: actions/checkout@v4
 
+      # Étape 2 : Configurer l'environnement Java avec JDK 17
       - name: Set Up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: "17"
           distribution: "adopt"
 
+      # Étape 3 : Mise en cache des dépendances Maven
       - name: Cache Maven Packages
         uses: actions/cache@v4
         with:
@@ -140,14 +149,18 @@ jobs:
       - name: Compile Java Code
         run: mvn -B clean verify
 
+      # Étape 5 : Téléverser le rapport Jacoco en tant qu'artefact (conditionnée par `backend_test`)
       - name: Upload Jacoco Report
+        needs: backend_test
         uses: actions/upload-artifact@v4
         with:
           name: jacoco-report
           path: back/target/site/jacoco/
           overwrite: true
 
+      # Étape 6 : Ajouter et pousser le rapport Jacoco dans le dépôt (conditionnée par `Upload Jacoco Report`)
       - name: Commit and push backend report
+        needs: Upload Jacoco Report
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -158,24 +171,30 @@ jobs:
           git commit -m "Add backend coverage report"
           git push origin main
 
+      # Étape 7 : Analyse avec SonarCloud (conditionnée par `backend_test`)
       - name: Check sonar properties
+        needs: backend_test
         run: cat sonar-project.properties
-
       - name: Analyse SonarCloud
+        needs: backend_test
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:4.0.0.4121:sonar
 
+      # Étape 8 : Construire l'image Docker pour le backend (conditionnée par `backend_test`)
       - name: Build Docker image
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/backend:latest .
+        needs: backend_test
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/backend:latest .
 
+      # Étape 9 : Connexion à Docker Hub (conditionnée par `backend_test`)
       - name: Log in to Docker Hub
+        needs: backend_test
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      # Étape 10 : Pousser l'image Docker sur Docker Hub (conditionnée par `Log in to Docker Hub`)
       - name: Push Docker image
-        run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/backend:latest
+        needs: backend_test
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/backend:latest
